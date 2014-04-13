@@ -1,0 +1,304 @@
+@namespace("org.bdgenomics.adam.avro")
+protocol ADAM {
+
+record ADAMRecord {
+
+    /**
+     * These two fields, along with the two
+     * reference{Length, Url} fields at the bottom
+     * of the schema, collectively form the contents
+     * of the Sequence Dictionary embedded in the these
+     * records from the BAM / SAM itself.
+     * TODO: this should be moved to ADAMContig
+     */
+    union { null, string } referenceName = null;
+    union { null, int } referenceId = null;
+
+    // 0-based reference position start
+    union { null, long } start = null;
+
+    union { null, int } mapq = null;
+    union { null, string } readName = null;
+    union { null, string } sequence = null;
+    union { null, string } mateReference = null;
+    union { null, long } mateAlignmentStart = null;
+    union { null, string } cigar = null;
+    union { null, string } qual = null;
+    union { null, string } recordGroupName = null;
+    union { null, int } recordGroupId = null;
+
+    // Read flags (all default to false)
+    union { boolean, null } readPaired = false;
+    union { boolean, null } properPair = false;
+    union { boolean, null } readMapped = false;
+    union { boolean, null } mateMapped = false;
+    union { boolean, null } readNegativeStrand = false;
+    union { boolean, null } mateNegativeStrand = false;
+    union { boolean, null } firstOfPair = false;
+    union { boolean, null } secondOfPair = false;
+    union { boolean, null } primaryAlignment = false;
+    union { boolean, null } failedVendorQualityChecks = false;
+    union { boolean, null } duplicateRead = false;
+
+    // Commonly used optional attributes
+    union { null, string } mismatchingPositions = null;
+
+    // Remaining optional attributes flattened into a string
+    union { null, string } attributes = null;
+
+    // record group identifer from sequencing run
+    union { null, string } recordGroupSequencingCenter = null;
+    union { null, string } recordGroupDescription = null;
+    union { null, long } recordGroupRunDateEpoch = null;
+    union { null, string } recordGroupFlowOrder = null;
+    union { null, string } recordGroupKeySequence = null;
+    union { null, string } recordGroupLibrary = null;
+    union { null, int } recordGroupPredictedMedianInsertSize = null;
+    union { null, string } recordGroupPlatform = null;
+    union { null, string } recordGroupPlatformUnit = null;
+    union { null, string } recordGroupSample = null;
+
+    union { null, int } mateReferenceId = null;
+
+    // See note, above.
+    union { null, long }   referenceLength = null;
+    union { null, string } referenceUrl = null;
+
+    union { null, long } mateReferenceLength = null;
+    union { null, string } mateReferenceUrl = null;
+
+    union { null, string } origQual = null;
+}
+
+enum Base {
+    A,
+    C,
+    T,
+    G,
+    U,
+    N, // any
+    X, // any
+    K, // keto: G/T
+    M, // aMino: A/C
+    R, // puRine: A/G
+    Y, // pYriminidine: C/T
+    S, // Strong: C/G
+    W, // Weak: A/T
+    B, // not A
+    V, // not T
+    H, // not G
+    D  // not C
+}
+
+record ADAMNucleotideContigFragment {
+    // stores a contig of nucleotides; this may be a reference chromosome, may be an
+    // assembly, may be a BAC. very long contigs (>1Mbp) need to be split into fragments.
+    // it seems that they are too long to load in a single go.
+    union { null, string } contigName = null;
+    union { null, int } contigId = null;
+    union { null, string } description = null;
+    union { null, string } url = null; 
+    union { null, string } fragmentSequence = null; // sequence of bases in this fragment
+    union { null, long } contigLength = null; // length of the total contig (all fragments)
+    union { null, int } fragmentNumber = null; // ordered number for this fragment
+    union { null, long } fragmentStartPosition = null; // position of first base of fragment in contig
+    union { null, int } numberOfFragmentsInContig = null; // total number of fragments in contig
+}
+
+record ADAMPileup {
+    union { null, string } referenceName = null;
+    union { null, int } referenceId = null;
+    union { null, long } position = null;
+    union { null, int } rangeOffset = null;
+    union { null, int } rangeLength = null;
+    union { null, Base } referenceBase = null;
+    union { null, Base } readBase = null;
+    union { null, int } sangerQuality = null;
+    union { null, int } mapQuality = null;
+    union { null, int } numSoftClipped = null;
+    union { null, int } numReverseStrand = null;
+    union { null, int } countAtPosition = null;
+
+    union { null, string } readName = null;
+    union { null, long } readStart = null;
+    union { null, long } readEnd = null;
+
+    // record group identifer from sequencing run
+    union { null, string } recordGroupSequencingCenter = null;
+    union { null, string } recordGroupDescription = null;
+    union { null, long } recordGroupRunDateEpoch = null;
+    union { null, string } recordGroupFlowOrder = null;
+    union { null, string } recordGroupKeySequence = null;
+    union { null, string } recordGroupLibrary = null;
+    union { null, int } recordGroupPredictedMedianInsertSize = null;
+    union { null, string } recordGroupPlatform = null;
+    union { null, string } recordGroupPlatformUnit = null;
+    union { null, string } recordGroupSample = null;
+}
+
+record ADAMNestedPileup {
+     // nested pileup data type - contains reference to list of overlapping reads
+     // note: cannot be used with databases (e.g. hive/shark)
+     ADAMPileup pileup;
+     array<ADAMRecord> readEvidence;
+}
+
+record ADAMContig {
+  union { null, int }    contigId = null;
+  union { null, string } contigName = null;
+  union { null, long }   contigLength = null;
+  union { null, string } contigMD5 = null;
+  union { null, string } referenceURL = null;
+}
+
+record ADAMVariant {
+  union { null, ADAMContig } contig = null;
+  union { null, long }       position = null;
+  string                     referenceAllele;
+  string                     variantAllele;
+}
+
+enum ADAMGenotypeAllele {
+  Ref,   // Genotype is the reference allele
+  Alt,   // Genotype is the alternate allele
+  NoCall // Genotype could not be called (e.g., reads did not provide
+	 // enough information or had low quality)
+}
+
+enum ADAMGenotypeType {
+  HOM_REF,
+  HET,
+  HOM_ALT,
+  NO_CALL
+}
+
+// This record represents all stats that, inside a VCF, are stored outside of the
+// sample but are computed based on the samples.  For instance,  MAPQ0 is an aggregate
+// stat computed from all samples and stored inside the INFO line.
+record VariantCallingAnnotations {
+  union { null, int }     readDepth = null;
+  // Was this downsampled?
+  union { null, boolean } downsampled = null;
+
+  // Base quality rank sum. 
+  union { null, float }   baseQRankSum = null;
+  union { null, float }   clippingRankSum = null;
+  union { null, float }   fisherStrandBiasPValue = null; // Phred-scaled.
+  union { null, float }   haplotypeScore = null;
+  union { null, float }   inbreedingCoefficient = null;
+  array<int>              alleleCountMLE = null;
+  array<int>              alleleFrequencyMLE = null;
+  union { null, float }   rmsMapQ = null;
+  union { null, int }     mapq0Reads = null;
+  union { null, float }   mqRankSum = null;
+  union { null, boolean } usedForNegativeTrainingSet = null;
+  union { null, boolean } usedForPositiveTrainingSet = null;
+  union { null, float }   variantQualityByDepth = null;
+  union { null, float }   readPositionRankSum = null;
+  // Log-odds ratio of being a true vs false variant under trained
+  // Gaussian mixture model.
+  union { null, float }   vqslod = null;
+  union { null, string }  culprit = null;
+  // Phred-scaled probability of error for this variant call.
+  union { null, float }   variantCallErrorProbability = null;
+  // True implies either filters were applied and the variant passed
+  // those filters, or no filters were applied.  False implies filters
+  // were applied the variant did not pass.
+  boolean                 variantIsPassing = true;
+  // A list of filters applied.
+  array <string>          variantFilters = null;
+}
+
+record ADAMGenotype {
+  union { null, ADAMVariant }               variant;
+  union { null, VariantCallingAnnotations } variantCallingAnnotations = null;
+
+  // Sample-level data, i.e. data specific to this particular sample
+  union { null, string }  sampleId = null;
+  union { null, string }  sampleDescription = null;
+  union { null, string }  processingDescription = null;
+
+  // Length is equal to the ploidy
+  array <ADAMGenotypeAllele> alleles = null;
+
+  // How many reads consider this allele to be the reference
+  union { null, int }     referenceReadDepth = null;
+  // How many reads consider this allele to be the alternate
+  union { null, int }     alternateReadDepth = null;
+  // How many total reads at this position
+  union { null, int }     readDepth = null;
+  // The phred-scaled probability that we're correct for this genotype
+  // call.
+  union { null, int }     genotypeQuality = null;
+
+  // Phred-scaled. Always length 3 since we are not multiallelic.
+  array<int>              genotypeLikelihoods = null; 
+
+  // Allele dosage
+  union { null, float }    expectedAlleleDosage = null;
+
+  // number of reads mapped at site on forward strand
+  union { null, int } readsMappedForwardStrand = null;
+
+  // In the ADAM world we split multiallelic VCF lines into multiple
+  // single-alternate records.  This bit is set if that happened for this
+  // record.
+  boolean                 splitFromMultiAllelic = false;
+  // Whether this is a phased genotype
+  union { null, boolean } isPhased = null;
+  // And if so, what is the phase id
+  union { null, int }     phaseSetId = null;
+  // The quality of the phasing.  This isn't precisely defined in v4.2
+  // of the spec.
+  union { null, int }     phaseQuality = null;
+}
+
+record VariantEffect
+{
+  union { null, string} hgvs = null;
+  union { null, string } referenceAminoAcid = null;
+  union { null, string } alternateAminoAcid = null;
+  union {null, string} geneId = null;
+  union {null, string} transcriptId = null;
+}
+
+record ADAMDatabaseVariantAnnotation {
+  union { null, ADAMVariant } variant;
+
+  union { null, int } dbSnpId = null;
+
+  //domain information
+  union {null, string} geneSymbol = null;
+
+  //clinical fields
+  union {null, string} omimId  = null;
+  union {null, string} cosmicId = null;
+  union {null, string} clinvarId  = null;
+  union {null, string} clinicalSignificance  = null;
+
+  //conservation
+  union { null, string } gerpNr  = null;
+  union { null, string } gerpRs  = null;
+  union { null, float } phylop  = null;
+  union { null, string } ancestralAllele  = null;
+
+  //population statistics
+  union {null, int} thousandGenomesAlleleCount = null;
+  union {null, float} thousandGenomesAlleleFrequency = null;
+
+  //effect
+  //TODO(arahuja): Parse into array
+  //array<VariantEffect> effects = null;
+
+  //predicted effects
+  union { null, float } siftScore = null;
+  union { null, float } siftScoreConverted = null;
+  union { null, string } siftPred = null;
+
+  union { null, float } mutationTasterScore = null;
+  union { null, float } mutationTasterScoreConverted = null;
+  union { null, string } mutationTasterPred = null;
+
+}
+
+}

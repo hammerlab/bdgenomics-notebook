@@ -1,4 +1,6 @@
-# A Walk Through ADAM's Avro Schemas
+# A Walk Through ADAM's Avro Schemas & Big Data Genomics Data Types
+
+You can view this notebook online via iPython's nbviewer [here](http://nbviewer.ipython.org/github/hammerlab/bdgenomics-notebook/blob/master/ADAM_Avro_Records_Walkthrough.ipynb). (Note, for some reason raw text fields lose formatting when viewed this way: downloading and locally running this notebook makes viewing those fields easier.)
 
 This [iPython notebook](http://ipython.org/) is meant to introduce you to the various datatypes used with ADAM to process next-generation sequencing (NGS) data.
 
